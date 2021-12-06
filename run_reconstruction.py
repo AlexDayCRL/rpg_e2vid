@@ -3,13 +3,14 @@ from utils.loading_utils import load_model, get_device
 import numpy as np
 import argparse
 import pandas as pd
-from utils.event_readers import FixedSizeEventReader, FixedDurationEventReader
+from utils.event_readers import RosbagEventReader, RosSubscriberEventReader, FixedSizeEventReader, FixedDurationEventReader
 from utils.inference_utils import events_to_voxel_grid, events_to_voxel_grid_pytorch
 from utils.timers import Timer
 import time
 from image_reconstructor import ImageReconstructor
 from options.inference_options import set_inference_options
 
+import rospy
 
 if __name__ == "__main__":
 
@@ -17,8 +18,10 @@ if __name__ == "__main__":
         description='Evaluating a trained network')
     parser.add_argument('-c', '--path_to_model', required=True, type=str,
                         help='path to model weights')
-    parser.add_argument('-i', '--input_file', required=True, type=str)
-    parser.add_argument('--fixed_duration', dest='fixed_duration', action='store_true')
+    parser.add_argument('-i', '--input_file', type=str)
+    parser.add_argument('--event_reader', dest='event_reader', type=str)
+    parser.add_argument('--width', dest='width', type=int, required=True)
+    parser.add_argument('--height', dest='height', type=int, required=True)
     parser.set_defaults(fixed_duration=False)
     parser.add_argument('-N', '--window_size', default=None, type=int,
                         help="Size of each event window, in number of events. Ignored if --fixed_duration=True")
@@ -39,10 +42,8 @@ if __name__ == "__main__":
     # Read sensor size from the first first line of the event file
     path_to_events = args.input_file
 
-    header = pd.read_csv(path_to_events, delim_whitespace=True, header=None, names=['width', 'height'],
-                         dtype={'width': np.int, 'height': np.int},
-                         nrows=1)
-    width, height = header.values[0]
+    width, height = args.width, args.height
+
     print('Sensor size: {} x {}'.format(width, height))
 
     # Load model
@@ -80,15 +81,21 @@ if __name__ == "__main__":
     if args.compute_voxel_grid_on_cpu:
         print('Will compute voxel grid on CPU.')
 
-    if args.fixed_duration:
+    if args.event_reader == 'fixed_duration':
         event_window_iterator = FixedDurationEventReader(path_to_events,
                                                          duration_ms=args.window_duration,
                                                          start_index=start_index)
-    else:
+    elif args.event_reader == 'fixed_size':
         event_window_iterator = FixedSizeEventReader(path_to_events, num_events=N, start_index=start_index)
+    elif args.event_reader == 'rosbag':
+        event_window_iterator = RosbagEventReader(path_to_events, '/dvs/events', num_events=N)
+    else:
+        event_window_iterator = RosSubscriberEventReader('/dvs/events', num_events=N)
 
     with Timer('Processing entire dataset'):
         for event_window in event_window_iterator:
+            if event_window is None or event_window.shape[0] == 0:
+                continue
 
             last_timestamp = event_window[-1, 0]
 
