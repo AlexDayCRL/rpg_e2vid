@@ -7,7 +7,7 @@ from .timers import Timer
 import rosbag
 import rospy
 from rospy.msg import AnyMsg
-from dvs_msgs.msg import EventArray, Event
+# from dvs_msgs.msg import EventArray, Event
 
 
 class ROSHeader:

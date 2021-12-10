@@ -88,9 +88,9 @@ if __name__ == "__main__":
     elif args.event_reader == 'fixed_size':
         event_window_iterator = FixedSizeEventReader(path_to_events, num_events=N, start_index=start_index)
     elif args.event_reader == 'rosbag':
-        event_window_iterator = RosbagEventReader(path_to_events, '/dvs/events', num_events=N)
+        event_window_iterator = RosbagEventReader(path_to_events, '/crl_rzr/dvs/events', num_events=N)
     else:
-        event_window_iterator = RosSubscriberEventReader('/dvs/events', num_events=N)
+        event_window_iterator = RosSubscriberEventReader('/crl_rzr/dvs/events', num_events=N)
 
     with Timer('Processing entire dataset'):
         for event_window in event_window_iterator:
