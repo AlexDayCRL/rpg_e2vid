@@ -47,7 +47,7 @@ class RosbagWriter:
         self.num_bins_to_show = options.num_bins_to_show
         print('== Rosbag Writer ==')
         if self.output_rosbag:
-            print("Will write images back to: {self.output_rosbag}")
+            print(f"Will write images back to: {self.output_rosbag}")
             try:
                 self.bag = rosbag.Bag(self.output_rosbag, 'a')
             except rosbag.bag.ROSBagException:
@@ -55,7 +55,7 @@ class RosbagWriter:
             self.bridge = CvBridge()
 
             if self.save_events:
-                print('Will write event previews to: {self.output_rosbag}')
+                print(f'Will write event previews to: {self.output_rosbag}')
 
             atexit.register(self.__cleanup__)
         else:
@@ -71,11 +71,11 @@ class RosbagWriter:
             msg = self.bridge.cv2_to_imgmsg(event_preview, "rgb8")
             msg.header.stamp = rospy.Time.from_sec(stamp / 1e9)
 
-            self.bag.write("/crl_rzr/dvs/event", msg, msg.header.stamp)
+            self.bag.write("/crl_rzr/dvs/event_viz", msg, msg.header.stamp)
 
         msg = self.bridge.cv2_to_imgmsg(img, "mono8")
         msg.header.stamp = rospy.Time.from_sec(stamp / 1e9)
-        self.bag.write("crl_rzr/dvs/image", msg, msg.header.stamp)
+        self.bag.write("/crl_rzr/dvs/image", msg, msg.header.stamp)
 
     def __cleanup__(self):
         if self.output_rosbag:
