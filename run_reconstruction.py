@@ -20,6 +20,7 @@ if __name__ == "__main__":
                         help='path to model weights')
     parser.add_argument('-i', '--input_file', type=str)
     parser.add_argument('--event_reader', dest='event_reader', type=str)
+    parser.add_argument('--input_topic', dest='input_topic', default="/crl_rzr/dvs/events", type=str)
     parser.add_argument('--width', dest='width', type=int, required=True)
     parser.add_argument('--height', dest='height', type=int, required=True)
     parser.set_defaults(fixed_duration=False)
@@ -88,9 +89,9 @@ if __name__ == "__main__":
     elif args.event_reader == 'fixed_size':
         event_window_iterator = FixedSizeEventReader(path_to_events, num_events=N, start_index=start_index)
     elif args.event_reader == 'rosbag':
-        event_window_iterator = RosbagEventReader(path_to_events, '/crl_rzr/dvs/events', num_events=N)
+        event_window_iterator = RosbagEventReader(path_to_events, args.input_topic, num_events=N)
     else:
-        event_window_iterator = RosSubscriberEventReader('/crl_rzr/dvs/events', num_events=N)
+        event_window_iterator = RosSubscriberEventReader(args.input_topic, num_events=N)
 
     with Timer('Processing entire dataset'):
         for event_window in event_window_iterator:
