@@ -98,7 +98,7 @@ class RosSubscriberEventReader:
     """
 
     def __init__(self, topic, num_events=10000):
-        rospy.init_node('event_reader', anonymous=True)
+        # rospy.init_node('event_reader', anonymous=True)
         self.sub = rospy.Subscriber(topic, AnyMsg, self.callback, queue_size=1000)
         self.event_buffer = None
         self.event_array_msg = ROSEventArray(num_events)
