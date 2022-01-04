@@ -33,6 +33,14 @@ python run_reconstruction.py \
   --output_rosbag "out.bag"
 ```
 
+```bash
+python run_reconstruction.py \
+  -c pretrained/E2VID_lightweight.pth.tar \
+  --input_file "in.bag"
+  --event_reader "rosbag"
+  --output_folder "./out/"
+```
+
 ## Parameters
 
 Below is a description of the most important parameters:
