@@ -2,7 +2,8 @@ import torch
 import cv2
 import numpy as np
 from model.model import *
-from utils.inference_utils import CropParameters, EventPreprocessor, IntensityRescaler, ImageFilter, ImageDisplay, ImageWriter, UnsharpMaskFilter
+from utils.inference_utils import CropParameters, EventPreprocessor, IntensityRescaler, ImageFilter, UnsharpMaskFilter
+from utils.image_writers import ImageDisplay, ImageWriter, ImagePublisher, RosbagWriter
 from utils.inference_utils import upsample_color_image, merge_channels_into_color_image  # for color reconstruction
 from utils.util import robust_min, robust_max
 from utils.timers import CudaTimer, cuda_timers
@@ -52,6 +53,8 @@ class ImageReconstructor:
         self.image_filter = ImageFilter(options)
         self.unsharp_mask_filter = UnsharpMaskFilter(options, device=self.device)
         self.image_writer = ImageWriter(options)
+        self.image_publisher = ImagePublisher(options)
+        self.rosbag_writer = RosbagWriter(options)
         self.image_display = ImageDisplay(options)
 
     def update_reconstruction(self, event_tensor, event_tensor_id, stamp=None):
@@ -107,4 +110,6 @@ class ImageReconstructor:
             out = self.image_filter(out)
 
             self.image_writer(out, event_tensor_id, stamp, events=events)
+            self.image_publisher(out, event_tensor_id, stamp, events=events)
+            self.rosbag_writer(out, event_tensor_id, stamp, events=events)
             self.image_display(out, events)

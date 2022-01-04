@@ -1,6 +1,8 @@
 def set_inference_options(parser):
 
     parser.add_argument('-o', '--output_folder', default=None, type=str)  # if None, will not write the images to disk
+    parser.add_argument('--output_topic', dest='topic', type=str)
+    parser.add_argument('--output_rosbag', dest='output_rosbag', type=str)
     parser.add_argument('--dataset_name', default='reconstruction', type=str)
 
     parser.add_argument('--use_gpu', dest='use_gpu', action='store_true')

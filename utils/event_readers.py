@@ -4,6 +4,129 @@ from os.path import splitext
 import numpy as np
 from .timers import Timer
 
+import rosbag
+import rospy
+from rospy.msg import AnyMsg
+# from dvs_msgs.msg import EventArray, Event
+
+
+class ROSHeader:
+    def __init__(self):
+        self.np_dtype = None
+
+    def set_dtype(self, frame_bytes):
+        frame_id_length = np.frombuffer(frame_bytes, dtype='<u4', count=1, offset=12).item()
+        names = ['seq', 'secs', 'nsecs', 'frame_id_length', 'frame_id']
+        formats = ['<u4', '<u4', '<u4', '<u4', f'<S{frame_id_length}']
+
+        self.np_dtype = np.dtype(list(zip(names, formats)))
+
+    def dtype(self):
+        return self.np_dtype
+
+
+class ROSEvent:
+    def __init__(self):
+        self.np_dtype = None
+        names = ['x', 'y', 's', 'ns', 'polarity']
+        formats = ['<u2', '<u2,', '<u4', '<u4,', '<u1']
+        self.np_dtype = np.dtype(list(zip(names, formats)))
+
+    def dtype(self):
+        return self.np_dtype
+
+
+class ROSEventArray:
+    def __init__(self, max_num_events):
+        self.np_dtype = None
+        self.event = ROSEvent()
+        self.header = ROSHeader()
+        self.max_num_events = max_num_events
+
+    def set_dtype(self, frame_bytes):
+        self.header.set_dtype(frame_bytes)
+        num_events = np.frombuffer(frame_bytes,
+                                   dtype='<u4',
+                                   count=1,
+                                   offset=self.header.dtype().itemsize + 8).item()
+
+        max_num_events = min(self.max_num_events, num_events)
+
+        names = ['header', 'height', 'width', 'num_events', 'events']
+        formats = [self.header.dtype(), '<u4', '<u4', '<u4', (self.event.dtype(), (max_num_events,))]
+
+        self.np_dtype = np.dtype(list(zip(names, formats)))
+
+    def dtype(self):
+        return self.np_dtype
+
+
+class RosbagEventReader:
+    """
+    Reads events from live or playback data stored in a rosbag.
+    """
+
+    def __init__(self, bag_path, topic, num_events=10000):
+        self.bag = rosbag.Bag(bag_path)
+        self.messages = self.bag.read_messages(topics=[topic], raw=True)
+        self.event_array_msg = ROSEventArray(num_events)
+        self.num_events = num_events
+
+    def read_event_array(self, data):
+        self.event_array_msg.set_dtype(data)
+        event_array = np.frombuffer(data, dtype=self.event_array_msg.dtype(), count=1)
+        events = event_array['events'].squeeze()
+        events = np.array(events.tolist())
+
+        event_buffer = np.stack([events[:, 2]*1e9 + events[:, 3], events[:, 0], events[:, 1], events[:, 4]]).T
+
+        return event_buffer
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        with Timer('Reading events from event_buffer'):
+            bag_msg = next(self.messages)
+            event_window = self.read_event_array(bag_msg.message[1])
+        return event_window
+
+
+class RosSubscriberEventReader:
+    """
+    Reads events from live or playback data.
+    """
+
+    def __init__(self, topic, num_events=10000):
+        # rospy.init_node('event_reader', anonymous=True)
+        self.sub = rospy.Subscriber(topic, AnyMsg, self.callback, queue_size=1000)
+        self.event_buffer = None
+        self.event_array_msg = ROSEventArray(num_events)
+        self.num_events = num_events
+
+    def callback(self, msg):
+        with Timer('Responding to callbacks'):
+            self.event_array_msg.set_dtype(msg._buff)
+            event_array = np.frombuffer(msg._buff, dtype=self.event_array_msg.dtype(), count=1)
+            events = event_array['events'].squeeze()
+            events = np.array(events.tolist())
+
+            event_buffer = np.stack([events[:, 2]*1e9 + events[:, 3], events[:, 0], events[:, 1], events[:, 4]]).T
+
+            if self.event_buffer is not None:
+                self.event_buffer = np.concatenate((self.event_buffer, event_buffer))
+            else:
+                self.event_buffer = event_buffer
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        with Timer('Reading events from event_buffer'):
+            event_window = self.event_buffer
+            self.event_buffer = None
+        return event_window
+
 
 class FixedSizeEventReader:
     """
