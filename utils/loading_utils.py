@@ -1,5 +1,5 @@
 import torch
-from model.model import *
+from rpg_e2vid.model.model import *
 
 
 def load_model(path_to_model):

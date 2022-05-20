@@ -1,9 +1,9 @@
-from base import BaseModel
+from rpg_e2vid.base import BaseModel
 import torch.nn as nn
 import torch
-from model.unet import UNet, UNetRecurrent, UNetFire
+from rpg_e2vid.model.unet import UNet, UNetRecurrent, UNetFire
 from os.path import join
-from model.submodules import ConvLSTM, ResidualBlock, ConvLayer, UpsampleConvLayer, TransposedConvLayer
+from rpg_e2vid.model.submodules import ConvLSTM, ResidualBlock, ConvLayer, UpsampleConvLayer, TransposedConvLayer
 
 
 class BaseE2VID(BaseModel):
