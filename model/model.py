@@ -1,9 +1,9 @@
-from base import BaseModel
+from rpg_e2vid.base import BaseModel
 import torch.nn as nn
 import torch
-from model.unet import UNet, UNetRecurrent
+from rpg_e2vid.model.unet import UNet, UNetRecurrent, UNetFire
 from os.path import join
-from model.submodules import ConvLSTM, ResidualBlock, ConvLayer, UpsampleConvLayer, TransposedConvLayer
+from rpg_e2vid.model.submodules import ConvLSTM, ResidualBlock, ConvLayer, UpsampleConvLayer, TransposedConvLayer
 
 
 class BaseE2VID(BaseModel):
@@ -98,3 +98,29 @@ class E2VIDRecurrent(BaseE2VID):
         """
         img_pred, states = self.unetrecurrent.forward(event_tensor, prev_states)
         return img_pred, states
+
+
+class FireNet(BaseE2VID):
+    """
+    Model from the paper: "Fast Image Reconstruction with an Event Camera", Scheerlinck et. al., 2019.
+    The model is essentially a lighter version of E2VID, which runs faster (~2-3x faster) and has considerably less parameters (~200x less).
+    However, the reconstructions are not as high quality as E2VID: they suffer from smearing artefacts, and initialization takes longer.
+    """
+    def __init__(self, config):
+        super().__init__(config)
+        self.recurrent_block_type = str(config.get('recurrent_block_type', 'convgru'))
+        kernel_size = config.get('kernel_size', 3)
+        recurrent_blocks = config.get('recurrent_blocks', {'resblock': [0]})
+        self.net = UNetFire(self.num_bins,
+                            num_output_channels=1,
+                            skip_type=self.skip_type,
+                            recurrent_block_type=self.recurrent_block_type,
+                            base_num_channels=self.base_num_channels,
+                            num_residual_blocks=self.num_residual_blocks,
+                            norm=self.norm,
+                            kernel_size=kernel_size,
+                            recurrent_blocks=recurrent_blocks)
+
+    def forward(self, event_tensor, prev_states):
+        img, states = self.net.forward(event_tensor, prev_states)
+        return img, states

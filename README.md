@@ -1,3 +1,6 @@
+<<<<<<< HEAD
+todo
+=======
 # Offline Event Camera Rendering Tool
 
 Based on code provided with the following paper: [High Speed and High Dynamic Range Video with an Event Camera](http://rpg.ifi.uzh.ch/docs/TPAMI19_Rebecq.pdf). This tool allows (primarily) for offline rendering of DVS events. The use case for this tool is calibration. A bag will be collected with the events for  the calibration and then these events will be rendered so that the images can be used in a calibration pipeline.
@@ -80,3 +83,4 @@ Below is a description of the most important parameters:
 This code borrows from the following open source projects, whom we would like to thank:
 
 - [pytorch-template](https://github.com/victoresque/pytorch-template)
+>>>>>>> 2568dd052b09ba25db441da619a36f63166709d8
