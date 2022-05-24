@@ -7,10 +7,9 @@ setup(name='rpg_e2vid',
       author='Alex Day',
       author_email='aday@carnegierobotics.com',
       license='GPLv3',
-      packages=["rpg_e2vid.base", "rpg_e2vid.options", "rpg_e2vid.model", "rpg_e2vid.utils"],
+      packages=["rpg_e2vid.base", "rpg_e2vid.model", "rpg_e2vid.utils"],
       package_dir = {
           "rpg_e2vid.base": "./base",
-          "rpg_e2vid.options": "./options",
           "rpg_e2vid.model": "./model",
           "rpg_e2vid.utils": "./utils"
       },
