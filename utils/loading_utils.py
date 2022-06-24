@@ -2,9 +2,9 @@ import torch
 from rpg_e2vid.model.model import *
 
 
-def load_model(path_to_model):
+def load_model(path_to_model, map_location=None):
     print('Loading model {}...'.format(path_to_model))
-    raw_model = torch.load(path_to_model)
+    raw_model = torch.load(path_to_model, map_location)
     arch = raw_model['arch']
 
     try:
