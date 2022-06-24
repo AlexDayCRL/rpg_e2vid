@@ -52,6 +52,9 @@ def print_timing_info():
         else:
             print('{}: {:.2f} s'.format(timer_name, timing_value / 1000.0))
 
+# Check if there is a GPU, if not retype a CUDATimer as a normal timer
+if not torch.cuda.is_available():
+    CudaTimer = Timer
 
 # this will print all the timer values upon termination of any program that imported this file
 atexit.register(print_timing_info)
